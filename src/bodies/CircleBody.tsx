@@ -1,7 +1,6 @@
-import { Circle, Group, Image, useImage } from "@shopify/react-native-skia";
+import { Circle } from "@shopify/react-native-skia";
 import { Bodies, Composite, Engine } from "matter-js";
 import { useEffect, useRef } from "react";
-import assets from "../../assets";
 
 export function CircleBody(props: {
   engine: Engine;
@@ -12,8 +11,6 @@ export function CircleBody(props: {
   isStatic?: boolean;
 }) {
   const { engine, x, y, radius, color, isStatic = false } = props;
-
-  const image = useImage(assets.bubble);
 
   const body = useRef(
     Bodies.circle(x + radius, y + radius, radius, {
