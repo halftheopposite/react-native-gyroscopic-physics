@@ -1,17 +1,11 @@
-import {
-  Canvas,
-  Fill,
-  Rect,
-  SweepGradient,
-  vec,
-} from "@shopify/react-native-skia";
+import { Canvas, Fill, SweepGradient, vec } from "@shopify/react-native-skia";
 import { Engine } from "matter-js";
 import { useEffect, useRef, useState } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
+import { GradientButton } from "./GradientButton";
 import { Bubble } from "./bodies";
 import { Wall } from "./bodies/Wall";
 import { useGravity } from "./hooks/useGravity";
-import { GradientButton } from "./GradientButton";
 
 const SCREEN = Dimensions.get("window");
 const UPDATE_DELTA = 1000 / 60;
@@ -102,37 +96,37 @@ function BubblesBackground(props: {
           />
         </Fill>
 
-        {/* Left */}
+        {/* Top wall */}
         <Wall
           engine={engine}
           x={0}
-          y={-WALL_WIDTH}
+          y={-300}
           width={SCREEN.width}
           height={WALL_WIDTH}
           isStatic
         />
 
-        {/* Left */}
+        {/* Left wall */}
         <Wall
           engine={engine}
           x={-WALL_WIDTH}
-          y={0}
+          y={-300}
           width={WALL_WIDTH}
-          height={SCREEN.height}
+          height={SCREEN.height + 300}
           isStatic
         />
 
-        {/* Right */}
+        {/* Right wall */}
         <Wall
           engine={engine}
           x={SCREEN.width}
-          y={0}
+          y={-300}
           width={WALL_WIDTH}
-          height={SCREEN.height}
+          height={SCREEN.height + 300}
           isStatic
         />
 
-        {/* Bottom */}
+        {/* Bottom wall */}
         <Wall
           engine={engine}
           x={0}
@@ -161,8 +155,8 @@ function BubblesBackground(props: {
           engine={engine}
           count={bubblesCount}
           spawnPoint={{
-            x: SCREEN.width / 2,
-            y: 200,
+            x: SCREEN.width / 2 - BUBBLE_RADIUS,
+            y: -150,
           }}
         />
       </Canvas>
