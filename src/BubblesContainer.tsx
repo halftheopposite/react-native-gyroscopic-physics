@@ -17,15 +17,19 @@ const SCREEN = Dimensions.get("window");
 const UPDATE_DELTA = 1000 / 60;
 const WALL_WIDTH = 100;
 const BUBBLE_RADIUS = 30;
+const INITIAL_BUBBLE_COUNT = 10;
 
 export function BubblesContainer() {
+  const [bubblesCount, setBubblesCount] = useState(INITIAL_BUBBLE_COUNT);
+
   return (
     <View style={styles.container}>
       <BubblesBackground
+        bubblesCount={bubblesCount}
         placeholders={[
           {
             x: 100,
-            y: SCREEN.height - 200,
+            y: SCREEN.height - 150,
             width: SCREEN.width - 200,
             height: 50,
           },
@@ -34,13 +38,18 @@ export function BubblesContainer() {
 
       {/* UI layout */}
       <View style={styles.contentContainer}>
-        <GradientButton style={styles.button} />
+        <GradientButton
+          title="More bubbles!"
+          style={styles.button}
+          onPress={() => setBubblesCount((prev) => prev + 1)}
+        />
       </View>
     </View>
   );
 }
 
 function BubblesBackground(props: {
+  bubblesCount: number;
   placeholders?: {
     x: number;
     y: number;
@@ -48,7 +57,7 @@ function BubblesBackground(props: {
     height: number;
   }[];
 }) {
-  const { placeholders = [] } = props;
+  const { bubblesCount, placeholders = [] } = props;
 
   // This state is used only to refresh the component and its children
   const [tick, setTick] = useState([]);
@@ -142,6 +151,7 @@ function BubblesBackground(props: {
             y={placeholder.y}
             width={placeholder.width}
             height={placeholder.height}
+            color="transparent"
             isStatic
           />
         ))}
@@ -149,7 +159,7 @@ function BubblesBackground(props: {
         {/* Bubbles */}
         <Bubbles
           engine={engine}
-          count={20}
+          count={bubblesCount}
           spawnPoint={{
             x: SCREEN.width / 2,
             y: 200,
@@ -196,7 +206,7 @@ const styles = StyleSheet.create({
   button: {
     position: "absolute",
     height: 50,
-    top: SCREEN.height - 200,
+    top: SCREEN.height - 150,
     left: 100,
     right: 100,
   },
