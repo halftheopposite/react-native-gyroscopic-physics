@@ -1,2 +1,2 @@
-export * from "./CircleBody";
-export * from "./RectangleBody";
+export * from "./Bubble";
+export * from "./Wall";
