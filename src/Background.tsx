@@ -1,23 +1,30 @@
 import { Canvas } from "@shopify/react-native-skia";
 import { Engine } from "matter-js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { CircleBody } from "./bodies";
 import { RectangleBody } from "./bodies/RectangleBody";
+import { useGravity } from "./hooks/useGravity";
 
-const UPDATE_DELTA = 1000 / 60;
 const SCREEN = Dimensions.get("window");
-
+const UPDATE_DELTA = 1000 / 60;
 const WALL_WIDTH = 100;
 
 export function Background() {
   const [tick, setTick] = useState([]);
 
+  // Initialize physics engine
   const engine = useRef(
     Engine.create({
-      enableSleeping: true,
+      enableSleeping: false,
     })
   ).current;
+
+  // Apply gravity whenever it changes
+  useGravity((gravity) => {
+    engine.gravity.x = gravity.x;
+    engine.gravity.y = gravity.y;
+  });
 
   // Initialize update loop
   useEffect(() => {
@@ -33,6 +40,17 @@ export function Background() {
   return (
     <View style={styles.container} pointerEvents="none">
       <Canvas style={styles.canvas}>
+        {/* Left */}
+        <RectangleBody
+          engine={engine}
+          x={0}
+          y={-WALL_WIDTH}
+          width={SCREEN.width}
+          height={WALL_WIDTH}
+          color={"red"}
+          isStatic
+        />
+
         {/* Left */}
         <RectangleBody
           engine={engine}
@@ -61,12 +79,12 @@ export function Background() {
           x={0}
           y={SCREEN.height}
           width={SCREEN.width}
-          height={100}
+          height={WALL_WIDTH}
           color={"red"}
           isStatic
         />
 
-        {/* Button */}
+        {/* Button placeholder */}
         <RectangleBody
           engine={engine}
           x={100}
@@ -77,6 +95,7 @@ export function Background() {
           isStatic
         />
 
+        {/* Bubbles */}
         <CircleBody
           engine={engine}
           x={SCREEN.width / 2}
