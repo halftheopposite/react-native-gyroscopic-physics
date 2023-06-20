@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 /**
  * A rectangle body that you can color.
  */
-export function Wall(props: {
+export function WallBody(props: {
   engine: Engine;
   x: number;
   y: number;

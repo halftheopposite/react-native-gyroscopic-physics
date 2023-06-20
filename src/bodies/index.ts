@@ -1,2 +1,2 @@
 export * from "./Bubble";
-export * from "./Wall";
+export * from "./WallBody";

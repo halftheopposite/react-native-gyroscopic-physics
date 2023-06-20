@@ -8,7 +8,7 @@ export function useGravity(
   onUpdate: (gravity: { x: number; y: number }) => void
 ) {
   const update = () => {
-    DeviceMotion.setUpdateInterval(77);
+    DeviceMotion.setUpdateInterval(200);
   };
 
   const subscribe = () => {

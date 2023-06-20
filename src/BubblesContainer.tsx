@@ -5,27 +5,31 @@ import {
   useTouchHandler,
   vec,
 } from "@shopify/react-native-skia";
-import { Body, Composite, Engine, Query } from "matter-js";
-import { memo, useEffect, useRef, useState } from "react";
+import { Bodies, Body, Composite, Engine, Query } from "matter-js";
+import { useEffect, useRef, useState } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { GradientButton } from "./GradientButton";
 import { Bubble } from "./bodies";
-import { Wall } from "./bodies/Wall";
+import { WallBody } from "./bodies/WallBody";
 import { useGravity } from "./hooks/useGravity";
 
 const SCREEN = Dimensions.get("window");
-const UPDATE_DELTA = 1000 / 60;
+
+const UI_TIMESTEP = 1000 / 50;
+const PHYSICS_TIMESTEP = 1000 / 60;
+
 const WALL_WIDTH = 100;
+
 const BUBBLE_RADIUS = 30;
-const INITIAL_BUBBLE_COUNT = 10;
+const BUBBLES_COUNT = 30;
+
+const SPAWN_X = SCREEN.width / 2 - BUBBLE_RADIUS;
+const SPAWN_Y = -150;
 
 export function BubblesContainer() {
-  const [bubblesCount, setBubblesCount] = useState(INITIAL_BUBBLE_COUNT);
-
   return (
     <View style={styles.container}>
       <BubblesBackground
-        bubblesCount={bubblesCount}
         placeholders={[
           {
             x: 100,
@@ -41,7 +45,7 @@ export function BubblesContainer() {
         <GradientButton
           title="More bubbles!"
           style={styles.button}
-          onPress={() => setBubblesCount((prev) => prev + 1)}
+          onPress={() => console.log("TODO")}
         />
       </View>
     </View>
@@ -49,7 +53,6 @@ export function BubblesContainer() {
 }
 
 function BubblesBackground(props: {
-  bubblesCount: number;
   placeholders?: {
     x: number;
     y: number;
@@ -57,40 +60,57 @@ function BubblesBackground(props: {
     height: number;
   }[];
 }) {
-  const { bubblesCount, placeholders = [] } = props;
+  const { placeholders = [] } = props;
 
-  // This state is used only to refresh the component and its children
+  const [walls, setWalls] = useState<Body[]>([]);
+  const [bubbles, setBubbles] = useState<Body[]>([]);
   const [tick, setTick] = useState([]);
 
-  // Initialize physics engine
+  //
+  // Initialize engine and update loop
+  //
   const engine = useRef(
     Engine.create({
-      enableSleeping: false,
-      positionIterations: 2,
       gravity: {
         scale: 0.0015,
       },
     })
   ).current;
 
-  // Apply gravity whenever it changes
+  useEffect(() => {
+    // Create bubbles
+    const bubbleBodies = createBubbles();
+    setBubbles(bubbleBodies);
+
+    // Add all bodies into the world
+    Composite.add(engine.world, [...bubbleBodies]);
+
+    // Launch physics update loop
+    const update = () => {
+      Engine.update(engine, PHYSICS_TIMESTEP);
+      requestAnimationFrame(update);
+    };
+
+    update();
+
+    // Launch UI refresh loop
+    setInterval(() => {
+      setTick([]);
+    }, UI_TIMESTEP);
+  }, []);
+
+  //
+  // Listen to mobile orientation changes and update
+  // the artifical gravity of the simulation
+  //
   useGravity((gravity) => {
     engine.gravity.x = gravity.x;
     engine.gravity.y = gravity.y;
   });
 
-  // Initialize update loop
-  useEffect(() => {
-    const update = () => {
-      Engine.update(engine, UPDATE_DELTA);
-      setTick([]);
-      requestAnimationFrame(update);
-    };
-
-    update();
-  }, []);
-
-  // Handle touch events to move bodies
+  //
+  // Handle touch events to move bubbles arounds
+  //
   const [draggingBody, setDraggingBody] = useState<Body | null>(null);
 
   const touchHandler = useTouchHandler(
@@ -160,7 +180,7 @@ function BubblesBackground(props: {
         </Fill>
 
         {/* Top wall */}
-        <Wall
+        <WallBody
           engine={engine}
           x={0}
           y={-300}
@@ -170,7 +190,7 @@ function BubblesBackground(props: {
         />
 
         {/* Left wall */}
-        <Wall
+        <WallBody
           engine={engine}
           x={-WALL_WIDTH}
           y={-300}
@@ -180,7 +200,7 @@ function BubblesBackground(props: {
         />
 
         {/* Right wall */}
-        <Wall
+        <WallBody
           engine={engine}
           x={SCREEN.width}
           y={-300}
@@ -190,7 +210,7 @@ function BubblesBackground(props: {
         />
 
         {/* Bottom wall */}
-        <Wall
+        <WallBody
           engine={engine}
           x={0}
           y={SCREEN.height}
@@ -201,7 +221,7 @@ function BubblesBackground(props: {
 
         {/* Placeholders */}
         {placeholders.map((placeholder, index) => (
-          <Wall
+          <WallBody
             key={`placeholder-${index}`}
             engine={engine}
             x={placeholder.x}
@@ -214,43 +234,19 @@ function BubblesBackground(props: {
         ))}
 
         {/* Bubbles */}
-        <Bubbles
-          engine={engine}
-          count={bubblesCount}
-          spawnPoint={{
-            x: SCREEN.width / 2 - BUBBLE_RADIUS,
-            y: -150,
-          }}
-        />
+        {bubbles.map((body) => (
+          <Bubble
+            key={body.id}
+            x={body.position.x}
+            y={body.position.y}
+            radius={body.circleRadius}
+            angle={body.angle}
+          />
+        ))}
       </Canvas>
     </View>
   );
 }
-
-const Bubbles = memo(
-  (props: {
-    engine: Engine;
-    spawnPoint: { x: number; y: number };
-    count: number;
-  }) => {
-    const { engine, spawnPoint, count } = props;
-    const array = [...Array(count).keys()];
-
-    return (
-      <>
-        {array.map((value, index) => (
-          <Bubble
-            key={`bubble-${index}`}
-            engine={engine}
-            x={spawnPoint.x}
-            y={spawnPoint.y}
-            radius={BUBBLE_RADIUS}
-          />
-        ))}
-      </>
-    );
-  }
-);
 
 const styles = StyleSheet.create({
   container: {
@@ -270,3 +266,22 @@ const styles = StyleSheet.create({
     right: 100,
   },
 });
+
+//
+// Utils
+//
+
+function createBubbles(): Body[] {
+  let bodies: Body[] = [];
+
+  for (let i = 0; i < BUBBLES_COUNT; i++) {
+    bodies.push(
+      Bodies.circle(SPAWN_X, SPAWN_Y, BUBBLE_RADIUS, {
+        isStatic: false,
+        restitution: 0.6,
+      })
+    );
+  }
+
+  return bodies;
+}
