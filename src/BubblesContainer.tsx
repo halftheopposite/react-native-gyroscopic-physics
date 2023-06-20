@@ -72,7 +72,7 @@ function BubblesBackground(props: {
   const engine = useRef(
     Engine.create({
       gravity: {
-        scale: 0.0015,
+        scale: 0.002,
       },
     })
   ).current;
@@ -134,14 +134,14 @@ function BubblesBackground(props: {
           return;
         }
 
-        setDraggingBody(bodies[0]);
+        Body.setStatic(firstBody, true);
+
+        setDraggingBody(firstBody);
       },
       onActive: (info) => {
         if (!draggingBody) {
           return;
         }
-
-        draggingBody.isStatic = true;
 
         Body.setPosition(draggingBody, {
           x: info.x,
@@ -153,7 +153,7 @@ function BubblesBackground(props: {
           return;
         }
 
-        draggingBody.isStatic = false;
+        Body.setStatic(draggingBody, false);
 
         Body.applyForce(
           draggingBody,
