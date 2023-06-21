@@ -9,8 +9,7 @@ import { Bodies, Body, Composite, Engine, Query } from "matter-js";
 import { useEffect, useRef, useState } from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import { GradientButton } from "./GradientButton";
-import { Bubble } from "./bodies";
-import { WallBody } from "./bodies/WallBody";
+import { Bubble, Wall } from "./bodies";
 import { useGravity } from "./hooks/useGravity";
 
 const SCREEN = Dimensions.get("window");
@@ -26,12 +25,21 @@ const BUBBLES_COUNT = 30;
 const SPAWN_X = SCREEN.width / 2 - BUBBLE_RADIUS;
 const SPAWN_Y = -150;
 
+type Placeholder = {
+  id: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 export function BubblesContainer() {
   return (
     <View style={styles.container}>
       <BubblesBackground
         placeholders={[
           {
+            id: 123,
             x: 100,
             y: SCREEN.height - 150,
             width: SCREEN.width - 200,
@@ -52,25 +60,21 @@ export function BubblesContainer() {
   );
 }
 
-function BubblesBackground(props: {
-  placeholders?: {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  }[];
-}) {
-  const { placeholders = [] } = props;
+function BubblesBackground(props: { placeholders?: Placeholder[] }) {
+  const { placeholders } = props;
 
-  const [walls, setWalls] = useState<Body[]>([]);
-  const [bubbles, setBubbles] = useState<Body[]>([]);
-  const [tick, setTick] = useState([]);
+  const [wallBodies, setWallBodies] = useState<Body[]>([]);
+  const [bubbleBodies, setBubbleBodies] = useState<Body[]>([]);
+  const [placeholderBodies, setPlaceholdersBodies] = useState<Body[]>([]);
+
+  const [, setTick] = useState([]);
 
   //
   // Initialize engine and update loop
   //
   const engine = useRef(
     Engine.create({
+      positionIterations: 2,
       gravity: {
         scale: 0.002,
       },
@@ -78,12 +82,16 @@ function BubblesBackground(props: {
   ).current;
 
   useEffect(() => {
+    // Create walls
+    const wallBodies = createWalls();
+    setWallBodies(wallBodies);
+
     // Create bubbles
     const bubbleBodies = createBubbles();
-    setBubbles(bubbleBodies);
+    setBubbleBodies(bubbleBodies);
 
     // Add all bodies into the world
-    Composite.add(engine.world, [...bubbleBodies]);
+    Composite.add(engine.world, [...wallBodies, ...bubbleBodies]);
 
     // Launch physics update loop
     const update = () => {
@@ -98,6 +106,40 @@ function BubblesBackground(props: {
       setTick([]);
     }, UI_TIMESTEP);
   }, []);
+
+  //
+  // Listen to placeholder changes
+  //
+  useEffect(() => {
+    if (!placeholders || placeholders.length === 0) {
+      return;
+    }
+
+    const bodies: Body[] = [];
+
+    placeholders.forEach((placeholder) => {
+      const existingBody = Composite.allBodies(engine.world).find(
+        (body) => body.id === placeholder.id
+      );
+
+      // If body already exist we do not add it to the list
+      if (!!existingBody) {
+        return;
+      }
+
+      bodies.push(
+        createWall(
+          placeholder.x,
+          placeholder.y,
+          placeholder.width,
+          placeholder.height,
+          placeholder.id
+        )
+      );
+    });
+
+    Composite.add(engine.world, bodies);
+  }, [placeholders]);
 
   //
   // Listen to mobile orientation changes and update
@@ -179,68 +221,36 @@ function BubblesBackground(props: {
           />
         </Fill>
 
-        {/* Top wall */}
-        <WallBody
-          engine={engine}
-          x={0}
-          y={-300}
-          width={SCREEN.width}
-          height={WALL_WIDTH}
-          isStatic
-        />
-
-        {/* Left wall */}
-        <WallBody
-          engine={engine}
-          x={-WALL_WIDTH}
-          y={-300}
-          width={WALL_WIDTH}
-          height={SCREEN.height + 300}
-          isStatic
-        />
-
-        {/* Right wall */}
-        <WallBody
-          engine={engine}
-          x={SCREEN.width}
-          y={-300}
-          width={WALL_WIDTH}
-          height={SCREEN.height + 300}
-          isStatic
-        />
-
-        {/* Bottom wall */}
-        <WallBody
-          engine={engine}
-          x={0}
-          y={SCREEN.height}
-          width={SCREEN.width}
-          height={WALL_WIDTH}
-          isStatic
-        />
-
-        {/* Placeholders */}
-        {placeholders.map((placeholder, index) => (
-          <WallBody
-            key={`placeholder-${index}`}
-            engine={engine}
-            x={placeholder.x}
-            y={placeholder.y}
-            width={placeholder.width}
-            height={placeholder.height}
-            color="transparent"
-            isStatic
+        {/* Walls */}
+        {wallBodies.map((body) => (
+          <Wall
+            key={`${body.id}`}
+            x={body.bounds.min.x}
+            y={body.bounds.min.y}
+            width={Math.floor(body.bounds.max.x - body.bounds.min.x)}
+            height={Math.floor(body.bounds.max.y - body.bounds.min.y)}
           />
         ))}
 
         {/* Bubbles */}
-        {bubbles.map((body) => (
+        {bubbleBodies.map((body) => (
           <Bubble
-            key={body.id}
+            key={`${body.id}`}
             x={body.position.x}
             y={body.position.y}
             radius={body.circleRadius}
             angle={body.angle}
+          />
+        ))}
+
+        {/* Placeholders */}
+        {placeholderBodies.map((body) => (
+          <Wall
+            key={`${body.id}`}
+            x={body.bounds.min.x}
+            y={body.bounds.min.y}
+            width={Math.floor(body.bounds.max.x - body.bounds.min.x)}
+            height={Math.floor(body.bounds.max.y - body.bounds.min.y)}
           />
         ))}
       </Canvas>
@@ -270,6 +280,31 @@ const styles = StyleSheet.create({
 //
 // Utils
 //
+function createWalls(): Body[] {
+  const topOffset = 300;
+  const totalWidth = SCREEN.width;
+  const totalHeight = SCREEN.height + topOffset;
+
+  const topWall = createWall(0, -topOffset, totalWidth, WALL_WIDTH);
+  const leftWall = createWall(-WALL_WIDTH, -topOffset, WALL_WIDTH, totalHeight);
+  const rightWall = createWall(totalWidth, -topOffset, WALL_WIDTH, totalHeight);
+  const bottomWall = createWall(0, SCREEN.height, totalWidth, WALL_WIDTH);
+
+  return [topWall, leftWall, rightWall, bottomWall];
+}
+
+function createWall(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  id?: number
+): Body {
+  return Bodies.rectangle(x + width / 2, y + height / 2, width, height, {
+    isStatic: true,
+    ...(!!id ? { id } : {}),
+  });
+}
 
 function createBubbles(): Body[] {
   let bodies: Body[] = [];

@@ -4,9 +4,6 @@ import { memo } from "react";
 const BUBBLE_IMAGE_PATH = require("../../assets/bubble.png");
 const BUBBLE_PADDING = 5;
 
-/**
- * A circle body displaying a bubble image.
- */
 export const Bubble = memo(
   (props: { x: number; y: number; radius: number; angle: number }) => {
     const { x, y, radius, angle } = props;
