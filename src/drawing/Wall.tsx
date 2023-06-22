@@ -9,7 +9,7 @@ export const Wall = memo(
     height: number;
     color?: string;
   }) => {
-    const { x, y, width, height, color } = props;
+    const { x, y, width, height, color = "transparent" } = props;
 
     return <Rect x={x} y={y} width={width} height={height} color={color} />;
   }
