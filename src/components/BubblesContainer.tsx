@@ -2,6 +2,7 @@ import {
   Canvas,
   Fill,
   SweepGradient,
+  useImage,
   useTouchHandler,
   vec,
 } from "@shopify/react-native-skia";
@@ -22,8 +23,11 @@ import {
 } from "../config";
 import { Bubble, Wall } from "../drawing";
 import { useGravity } from "../hooks";
+import { roundDigitsLength } from "../utils";
 
-type Placeholder = {
+const BUBBLE_IMAGE_PATH = require("../../assets/bubble.png");
+
+export type Placeholder = {
   id: number;
   x: number;
   y: number;
@@ -36,6 +40,7 @@ export function BubblesContainer(props: {
   children: React.ReactNode;
 }) {
   const { placeholders, children } = props;
+  const image = useImage(BUBBLE_IMAGE_PATH);
 
   const [wallBodies, setWallBodies] = useState<Body[]>([]);
   const [bubbleBodies, setBubbleBodies] = useState<Body[]>([]);
@@ -48,7 +53,7 @@ export function BubblesContainer(props: {
   //
   const engine = useRef(
     Engine.create({
-      positionIterations: 2,
+      positionIterations: 6,
       gravity: {
         scale: 0.002,
       },
@@ -172,6 +177,7 @@ export function BubblesContainer(props: {
 
         Body.setStatic(draggingBody, false);
 
+        // Apply the current force to the bubble to keep momentum
         Body.applyForce(
           draggingBody,
           { x: info.x, y: info.y },
@@ -183,6 +189,10 @@ export function BubblesContainer(props: {
     },
     [draggingBody]
   );
+
+  if (!image) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
@@ -212,10 +222,11 @@ export function BubblesContainer(props: {
         {bubbleBodies.map((body) => (
           <Bubble
             key={`${body.id}`}
-            x={body.position.x}
-            y={body.position.y}
+            x={roundDigitsLength(body.position.x, 2)}
+            y={roundDigitsLength(body.position.y, 2)}
             radius={body.circleRadius}
-            angle={body.angle}
+            angle={roundDigitsLength(body.angle, 2)}
+            image={image}
           />
         ))}
 

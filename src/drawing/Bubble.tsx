@@ -1,17 +1,18 @@
-import { Image, useImage } from "@shopify/react-native-skia";
+import { Image, SkImage } from "@shopify/react-native-skia";
 import { memo } from "react";
 
-const BUBBLE_IMAGE_PATH = require("../../assets/bubble.png");
+/** The padding used to create some overlap between bubbles. */
 const BUBBLE_PADDING = 5;
 
 export const Bubble = memo(
-  (props: { x: number; y: number; radius: number; angle: number }) => {
-    const { x, y, radius, angle } = props;
-
-    const image = useImage(BUBBLE_IMAGE_PATH);
-    if (!image) {
-      return null;
-    }
+  (props: {
+    x: number;
+    y: number;
+    radius: number;
+    angle: number;
+    image: SkImage;
+  }) => {
+    const { x, y, radius, angle, image } = props;
 
     const size = radius * 2 + BUBBLE_PADDING;
 
