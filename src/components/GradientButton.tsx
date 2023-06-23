@@ -8,6 +8,7 @@ import {
 import { useRef, useState } from "react";
 import {
   Animated,
+  LayoutRectangle,
   Pressable,
   StyleProp,
   StyleSheet,
@@ -21,9 +22,10 @@ const AnimatedTouchable = Animated.createAnimatedComponent(Pressable);
 export function GradientButton(props: {
   title: string;
   style?: StyleProp<ViewStyle>;
+  onLayout: (layout: LayoutRectangle) => void;
   onPress: () => void;
 }) {
-  const { title, style, onPress } = props;
+  const { title, style, onLayout, onPress } = props;
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   const scaleValue = useRef(new Animated.Value(1)).current;
@@ -55,12 +57,13 @@ export function GradientButton(props: {
           ],
         },
       ]}
-      onLayout={(event) =>
+      onLayout={(event) => {
+        onLayout(event.nativeEvent.layout);
         setDimensions({
           width: event.nativeEvent.layout.width,
           height: event.nativeEvent.layout.height,
-        })
-      }
+        });
+      }}
       onPressIn={pressInAnimation}
       onPressOut={pressOutAnimation}
       onPress={onPress}
