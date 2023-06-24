@@ -22,7 +22,7 @@ const AnimatedTouchable = Animated.createAnimatedComponent(Pressable);
 export function GradientButton(props: {
   title: string;
   style?: StyleProp<ViewStyle>;
-  onLayout: (layout: LayoutRectangle) => void;
+  onLayout?: (layout: LayoutRectangle) => void;
   onPress: () => void;
 }) {
   const { title, style, onLayout, onPress } = props;
@@ -58,7 +58,10 @@ export function GradientButton(props: {
         },
       ]}
       onLayout={(event) => {
-        onLayout(event.nativeEvent.layout);
+        if (onLayout) {
+          onLayout(event.nativeEvent.layout);
+        }
+
         setDimensions({
           width: event.nativeEvent.layout.width,
           height: event.nativeEvent.layout.height,
