@@ -25,7 +25,7 @@ import { Bubble, Wall } from "../drawing";
 import { useGravity } from "../hooks";
 import { roundDigitsLength } from "../utils";
 
-const BUBBLE_IMAGE_PATH = require("../../assets/bubble.png");
+const BUBBLE_IMAGE_PATH = require("../assets/bubble.png");
 
 export type Placeholder = {
   id: number;
@@ -200,7 +200,7 @@ export function BubblesContainer(props: {
       <Canvas style={styles.canvas} onTouch={touchHandler}>
         <Fill>
           <SweepGradient
-            c={vec(-45, 0)}
+            c={vec(0, 0)}
             colors={["#FF8787", "#F8C4B4", "#E5EBB2", "#BCE29E"]}
             start={0}
             end={100}

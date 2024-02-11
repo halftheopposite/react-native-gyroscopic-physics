@@ -6,7 +6,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <RootStack.Navigator
-        initialRouteName="Physics"
+        initialRouteName="Sensors"
         screenOptions={{
           headerShown: false,
         }}
